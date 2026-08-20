@@ -46,10 +46,15 @@ class ProductControllerTest {
                 null,
                 20,
                 new CategoryResponse(categoryId, "Gominolas", "gominolas"));
-        given(productService.findAllActive(0, 20))
+        given(productService.findAllActive("fresa", "gominolas", new BigDecimal("1.00"),
+                new BigDecimal("5.00"), 0, 20))
                 .willReturn(new PageResponse<>(List.of(response), 0, 20, 1, 1));
 
-        mockMvc.perform(get("/api/v1/products"))
+        mockMvc.perform(get("/api/v1/products")
+                        .param("search", "fresa")
+                        .param("category", "gominolas")
+                        .param("minPrice", "1.00")
+                        .param("maxPrice", "5.00"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.content[0].name").value("Ositos"))
