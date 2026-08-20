@@ -25,7 +25,6 @@ com.candycorn.shop
 │   └── service
 ├── order
 ├── user
-├── security
 └── ShopApplication.java
 ```
 
@@ -33,10 +32,15 @@ com.candycorn.shop
 
 1. Catálogo: categorías, productos, stock y consultas públicas.
 2. Pedidos: pedidos, líneas, direcciones y estados.
-3. Autenticación: clientes, administradores, roles y protección de endpoints.
+3. Administración local: gestión de catálogo y pedidos sin autenticación.
 4. Pagos: proveedor, webhooks y estados de pago.
-5. Administración: gestión de catálogo y pedidos.
-6. Calidad: OpenAPI, tests de integración, observabilidad y documentación.
+5. Calidad: OpenAPI, tests de integración, observabilidad y documentación.
+
+Durante esta fase educativa y de ejecución local no se incluirán Spring Security,
+autenticación ni autorización. Los endpoints administrativos, cuando se creen,
+se mantendrán separados bajo `/api/v1/admin` y se considerarán accesibles solo
+desde el entorno local. La seguridad podrá añadirse posteriormente en una rama
+independiente.
 
 ## Catálogo
 
