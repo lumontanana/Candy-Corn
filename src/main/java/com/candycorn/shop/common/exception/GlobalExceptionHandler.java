@@ -18,4 +18,14 @@ public class GlobalExceptionHandler {
                 exception.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
+
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ApiError> handleInvalidRequest(InvalidRequestException exception) {
+        ApiError error = new ApiError(
+                Instant.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "INVALID_REQUEST",
+                exception.getMessage());
+        return ResponseEntity.badRequest().body(error);
+    }
 }
