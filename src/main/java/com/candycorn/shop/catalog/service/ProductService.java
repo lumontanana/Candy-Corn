@@ -1,7 +1,6 @@
 package com.candycorn.shop.catalog.service;
 
 import com.candycorn.shop.catalog.dto.ProductResponse;
-import com.candycorn.shop.catalog.entity.Product;
 import com.candycorn.shop.catalog.repository.ProductRepository;
 import com.candycorn.shop.common.exception.ResourceNotFoundException;
 import java.util.List;
@@ -35,5 +34,11 @@ public class ProductService {
         return productRepository.findBySlugAndActiveTrue(slug)
                 .map(ProductResponse::from)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + slug));
+    }
+
+    public List<ProductResponse> findAllActiveByCategorySlug(String categorySlug) {
+        return productRepository.findAllByCategorySlugAndActiveTrueOrderByNameAsc(categorySlug).stream()
+                .map(ProductResponse::from)
+                .toList();
     }
 }

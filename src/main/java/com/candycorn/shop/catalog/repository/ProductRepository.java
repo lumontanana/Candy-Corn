@@ -13,4 +13,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     Optional<Product> findByIdAndActiveTrue(UUID id);
 
     Optional<Product> findBySlugAndActiveTrue(String slug);
+
+    List<Product> findAllByCategorySlugAndActiveTrueOrderByNameAsc(String categorySlug);
 }
