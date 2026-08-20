@@ -2,6 +2,7 @@ package com.candycorn.shop.catalog.controller;
 
 import com.candycorn.shop.catalog.dto.CategoryResponse;
 import com.candycorn.shop.catalog.dto.ProductResponse;
+import com.candycorn.shop.catalog.dto.PageResponse;
 import com.candycorn.shop.catalog.service.CategoryService;
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +27,10 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}/products")
-    public List<ProductResponse> findProducts(@PathVariable UUID id) {
-        return categoryService.findProductsByCategory(id);
+    public PageResponse<ProductResponse> findProducts(
+            @PathVariable UUID id,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int size) {
+        return categoryService.findProductsByCategory(id, page, size);
     }
 }

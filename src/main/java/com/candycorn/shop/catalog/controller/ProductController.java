@@ -1,9 +1,10 @@
 package com.candycorn.shop.catalog.controller;
 
 import com.candycorn.shop.catalog.dto.ProductResponse;
+import com.candycorn.shop.catalog.dto.PageResponse;
 import com.candycorn.shop.catalog.service.ProductService;
-import java.util.List;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,8 +21,10 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<ProductResponse> findAll() {
-        return productService.findAllActive();
+    public PageResponse<ProductResponse> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return productService.findAllActive(page, size);
     }
 
     @GetMapping("/{id}")

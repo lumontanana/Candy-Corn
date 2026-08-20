@@ -2,6 +2,7 @@ package com.candycorn.shop.catalog.service;
 
 import com.candycorn.shop.catalog.dto.CategoryResponse;
 import com.candycorn.shop.catalog.dto.ProductResponse;
+import com.candycorn.shop.catalog.dto.PageResponse;
 import com.candycorn.shop.catalog.repository.CategoryRepository;
 import com.candycorn.shop.common.exception.ResourceNotFoundException;
 import java.util.List;
@@ -27,10 +28,10 @@ public class CategoryService {
                 .toList();
     }
 
-    public List<ProductResponse> findProductsByCategory(UUID categoryId) {
+    public PageResponse<ProductResponse> findProductsByCategory(UUID categoryId, int page, int size) {
         String slug = categoryRepository.findByIdAndActiveTrue(categoryId)
                 .map(category -> category.getSlug())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + categoryId));
-        return productService.findAllActiveByCategorySlug(slug);
+        return productService.findAllActiveByCategorySlug(slug, page, size);
     }
 }

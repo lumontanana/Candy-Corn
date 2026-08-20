@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.candycorn.shop.catalog.dto.CategoryResponse;
+import com.candycorn.shop.catalog.dto.PageResponse;
 import com.candycorn.shop.catalog.dto.ProductResponse;
 import com.candycorn.shop.catalog.service.ProductService;
 import com.candycorn.shop.common.exception.GlobalExceptionHandler;
@@ -45,13 +46,15 @@ class ProductControllerTest {
                 null,
                 20,
                 new CategoryResponse(categoryId, "Gominolas", "gominolas"));
-        given(productService.findAllActive()).willReturn(List.of(response));
+        given(productService.findAllActive(0, 20))
+                .willReturn(new PageResponse<>(List.of(response), 0, 20, 1, 1));
 
         mockMvc.perform(get("/api/v1/products"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
-                .andExpect(jsonPath("$[0].name").value("Ositos"))
-                .andExpect(jsonPath("$[0].category.slug").value("gominolas"));
+                .andExpect(jsonPath("$.content[0].name").value("Ositos"))
+                .andExpect(jsonPath("$.content[0].category.slug").value("gominolas"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test

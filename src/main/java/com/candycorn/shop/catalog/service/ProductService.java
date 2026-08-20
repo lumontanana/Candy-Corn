@@ -1,10 +1,13 @@
 package com.candycorn.shop.catalog.service;
 
 import com.candycorn.shop.catalog.dto.ProductResponse;
+import com.candycorn.shop.catalog.dto.PageResponse;
 import com.candycorn.shop.catalog.repository.ProductRepository;
 import com.candycorn.shop.common.exception.ResourceNotFoundException;
-import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +21,9 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
-    public List<ProductResponse> findAllActive() {
-        return productRepository.findAllByActiveTrueOrderByNameAsc().stream()
-                .map(ProductResponse::from)
-                .toList();
+    public PageResponse<ProductResponse> findAllActive(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+        return PageResponse.from(productRepository.findAllByActiveTrue(pageable).map(ProductResponse::from));
     }
 
     public ProductResponse findActiveById(UUID id) {
@@ -36,9 +38,10 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + slug));
     }
 
-    public List<ProductResponse> findAllActiveByCategorySlug(String categorySlug) {
-        return productRepository.findAllByCategorySlugAndActiveTrueOrderByNameAsc(categorySlug).stream()
-                .map(ProductResponse::from)
-                .toList();
+    public PageResponse<ProductResponse> findAllActiveByCategorySlug(String categorySlug, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+        return PageResponse.from(
+                productRepository.findAllByCategorySlugAndActiveTrue(categorySlug, pageable)
+                        .map(ProductResponse::from));
     }
 }

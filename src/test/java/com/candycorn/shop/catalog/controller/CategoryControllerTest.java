@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.candycorn.shop.catalog.dto.CategoryResponse;
+import com.candycorn.shop.catalog.dto.PageResponse;
 import com.candycorn.shop.catalog.service.CategoryService;
 import com.candycorn.shop.common.exception.GlobalExceptionHandler;
 import com.candycorn.shop.common.exception.ResourceNotFoundException;
@@ -43,7 +44,7 @@ class CategoryControllerTest {
     @Test
     void returnsNotFoundWhenCategoryDoesNotExist() throws Exception {
         UUID categoryId = UUID.randomUUID();
-        given(categoryService.findProductsByCategory(categoryId))
+        given(categoryService.findProductsByCategory(categoryId, 0, 20))
                 .willThrow(new ResourceNotFoundException("Category not found: " + categoryId));
 
         mockMvc.perform(get("/api/v1/categories/{id}/products", categoryId))
