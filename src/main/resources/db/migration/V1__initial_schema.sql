@@ -1,0 +1,1 @@
+-- Initial schema placeholder. Domain tables will be added in the next feature branch.
