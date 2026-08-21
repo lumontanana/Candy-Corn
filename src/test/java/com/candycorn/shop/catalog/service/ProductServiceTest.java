@@ -27,6 +27,20 @@ class ProductServiceTest {
     }
 
     @Test
+    void rejectsCategorySearchWithNegativePage() {
+        assertThatThrownBy(() -> productService.findAllActiveByCategorySlug("gominolas", -1, 20))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("page must be greater than or equal to 0");
+    }
+
+    @Test
+    void rejectsCategorySearchWithSizeAboveMaximum() {
+        assertThatThrownBy(() -> productService.findAllActiveByCategorySlug("gominolas", 0, 101))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("size must be between 1 and 100");
+    }
+
+    @Test
     void rejectsInvertedPriceRange() {
         assertThatThrownBy(() -> productService.findAllActive(
                 null,

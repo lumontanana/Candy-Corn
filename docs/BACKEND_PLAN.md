@@ -85,3 +85,13 @@ PENDING, CONFIRMED, PREPARING, SHIPPED, DELIVERED, CANCELLED
 ## Calidad
 
 Cada funcionalidad tendrá tests unitarios, de repositorio y de API. Los errores se devolverán mediante un formato común usando `@RestControllerAdvice`. La API se versionará bajo `/api/v1` y se documentará con OpenAPI.
+
+## Progreso
+
+### 2026-08-21
+
+- `Product.changeStock` rechaza valores negativos, aplicando en código la regla de "el stock no puede ser negativo" ya recogida en este plan.
+- La validación de paginación (`page`/`size`) se extrae a `validatePagination` en `ProductService` y se reutiliza también en la búsqueda de productos por categoría, que antes no la aplicaba.
+- `ProductSpecifications.nameContains` usa `Locale.ROOT` al pasar a minúsculas para evitar comportamientos distintos según el locale del servidor.
+- `GlobalExceptionHandler` añade dos manejadores: `MethodArgumentTypeMismatchException` (parámetros con tipo inválido, p. ej. un UUID o precio mal formado) devuelve 400, y un manejador genérico de `Exception` devuelve 500 y registra el error en vez de dejarlo sin capturar.
+- Se añaden tests unitarios y de controlador cubriendo estos casos: stock negativo, paginación inválida al listar por categoría, y parámetros de tipo inválido en los endpoints de productos.

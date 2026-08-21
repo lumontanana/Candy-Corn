@@ -9,6 +9,7 @@ import com.candycorn.shop.catalog.dto.CategoryResponse;
 import com.candycorn.shop.catalog.dto.PageResponse;
 import com.candycorn.shop.catalog.service.CategoryService;
 import com.candycorn.shop.common.exception.GlobalExceptionHandler;
+import com.candycorn.shop.common.exception.InvalidRequestException;
 import com.candycorn.shop.common.exception.ResourceNotFoundException;
 import java.util.List;
 import java.util.UUID;
@@ -39,6 +40,18 @@ class CategoryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Gominolas"))
                 .andExpect(jsonPath("$[0].slug").value("gominolas"));
+    }
+
+    @Test
+    void returnsBadRequestWhenPageIsNegative() throws Exception {
+        UUID categoryId = UUID.randomUUID();
+        given(categoryService.findProductsByCategory(categoryId, -1, 20))
+                .willThrow(new InvalidRequestException("page must be greater than or equal to 0"));
+
+        mockMvc.perform(get("/api/v1/categories/{id}/products", categoryId)
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"));
     }
 
     @Test

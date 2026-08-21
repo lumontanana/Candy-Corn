@@ -49,13 +49,17 @@ public class ProductService {
         return PageResponse.from(productRepository.findAll(specification, pageable).map(ProductResponse::from));
     }
 
-    private void validateSearchParameters(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
+    private void validatePagination(int page, int size) {
         if (page < 0) {
             throw new InvalidRequestException("page must be greater than or equal to 0");
         }
         if (size < 1 || size > 100) {
             throw new InvalidRequestException("size must be between 1 and 100");
         }
+    }
+
+    private void validateSearchParameters(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
+        validatePagination(page, size);
         if (minPrice != null && minPrice.signum() < 0) {
             throw new InvalidRequestException("minPrice must be greater than or equal to 0");
         }
@@ -80,6 +84,7 @@ public class ProductService {
     }
 
     public PageResponse<ProductResponse> findAllActiveByCategorySlug(String categorySlug, int page, int size) {
+        validatePagination(page, size);
         Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
         return PageResponse.from(
                 productRepository.findAllByCategorySlugAndActiveTrue(categorySlug, pageable)

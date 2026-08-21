@@ -72,4 +72,20 @@ class ProductControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("RESOURCE_NOT_FOUND"));
     }
+
+    @Test
+    void returnsBadRequestForInvalidUuid() throws Exception {
+        mockMvc.perform(get("/api/v1/products/{id}", "not-a-uuid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Invalid value for parameter 'id'"));
+    }
+
+    @Test
+    void returnsBadRequestForNonNumericPrice() throws Exception {
+        mockMvc.perform(get("/api/v1/products")
+                        .param("minPrice", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"));
+    }
 }
