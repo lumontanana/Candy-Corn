@@ -82,6 +82,63 @@ Estados previstos:
 PENDING, CONFIRMED, PREPARING, SHIPPED, DELIVERED, CANCELLED
 ```
 
+## Esquema de relaciones
+
+Refleja las entidades implementadas hasta ahora (Catálogo y el modelo de Pedidos). `Address` no es una tabla propia: es un `@Embeddable` que se guarda como columnas `shipping_*` dentro de `orders`. `User` aparece en la estructura de paquetes del plan pero todavía no tiene entidad ni tabla.
+
+```mermaid
+erDiagram
+    CATEGORY ||--o{ PRODUCT : "clasifica"
+    PRODUCT ||--o{ ORDER_ITEM : "se referencia en"
+    ORDER ||--|{ ORDER_ITEM : "contiene"
+    ORDER ||--|| ADDRESS : "embebe (shipping_*)"
+
+    CATEGORY {
+        UUID id PK
+        string name
+        string slug UK
+        boolean active
+    }
+    PRODUCT {
+        UUID id PK
+        string name
+        string slug UK
+        string description
+        decimal price
+        string imageUrl
+        int stock
+        boolean active
+        UUID category_id FK
+    }
+    ORDER {
+        UUID id PK
+        string customerName
+        string customerEmail
+        string status
+    }
+    ORDER_ITEM {
+        UUID id PK
+        UUID order_id FK
+        UUID product_id FK
+        string productName
+        decimal unitPrice
+        int quantity
+    }
+    ADDRESS {
+        string recipientName
+        string street
+        string city
+        string postalCode
+        string country
+        string phone
+    }
+```
+
+Notas:
+
+- `Product` no se borra físicamente al desactivarse, así que `ORDER_ITEM.product_id` sigue siendo válido aunque el producto ya no esté activo; por eso `OrderItem` guarda `productName`/`unitPrice` como copia (snapshot) en el momento del pedido, en vez de depender de los valores actuales del producto.
+- `Order` es la raíz del agregado: `OrderItem` solo se crea y se modifica a través de `Order.addItem(...)`, no tiene repositorio propio.
+
 ## Calidad
 
 Cada funcionalidad tendrá tests unitarios, de repositorio y de API. Los errores se devolverán mediante un formato común usando `@RestControllerAdvice`. La API se versionará bajo `/api/v1` y se documentará con OpenAPI.
