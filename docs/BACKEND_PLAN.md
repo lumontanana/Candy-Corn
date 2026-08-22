@@ -95,3 +95,16 @@ Cada funcionalidad tendrá tests unitarios, de repositorio y de API. Los errores
 - `ProductSpecifications.nameContains` usa `Locale.ROOT` al pasar a minúsculas para evitar comportamientos distintos según el locale del servidor.
 - `GlobalExceptionHandler` añade dos manejadores: `MethodArgumentTypeMismatchException` (parámetros con tipo inválido, p. ej. un UUID o precio mal formado) devuelve 400, y un manejador genérico de `Exception` devuelve 500 y registra el error en vez de dejarlo sin capturar.
 - Se añaden tests unitarios y de controlador cubriendo estos casos: stock negativo, paginación inválida al listar por categoría, y parámetros de tipo inválido en los endpoints de productos.
+
+### 2026-08-22
+
+Arranca el paso 2 del plan (Pedidos), con modelos y repositorio (todavía sin endpoints ni lógica de creación transaccional):
+
+- Nuevas entidades en `com.candycorn.shop.order.entity`: `Order` (raíz del agregado), `OrderItem`, `Address` (embeddable) y el enum `OrderStatus`.
+- `Order.addItem(product, quantity)` copia nombre y precio del producto como snapshot en cada `OrderItem`, tal y como recoge este plan; rechaza cantidades no positivas.
+- `Order.changeStatus(...)` valida las transiciones de estado permitidas (`PENDING → CONFIRMED/CANCELLED`, etc.) y rechaza saltos inválidos o transiciones desde estados terminales (`DELIVERED`, `CANCELLED`).
+- `OrderRepository` (`com.candycorn.shop.order.repository`) como único repositorio del agregado; no hay repositorio propio para `OrderItem` porque se accede siempre a través de `Order`.
+- Migración `V3__create_order_tables.sql` con las tablas `orders` y `order_items`, incluyendo el check de estado válido y las claves foráneas hacia `products`.
+- Tests unitarios de la entidad `Order` cubriendo snapshot de precios, cálculo del total, y transiciones de estado válidas/inválidas.
+
+Pendiente para continuar Pedidos: DTOs, `OrderService` con la creación transaccional (copiar precios y reservar stock en la misma operación, según recoge este plan) y los endpoints correspondientes.
