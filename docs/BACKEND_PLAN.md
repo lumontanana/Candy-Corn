@@ -164,4 +164,14 @@ Arranca el paso 2 del plan (Pedidos), con modelos y repositorio (todavía sin en
 - Migración `V3__create_order_tables.sql` con las tablas `orders` y `order_items`, incluyendo el check de estado válido y las claves foráneas hacia `products`.
 - Tests unitarios de la entidad `Order` cubriendo snapshot de precios, cálculo del total, y transiciones de estado válidas/inválidas.
 
-Pendiente para continuar Pedidos: DTOs, `OrderService` con la creación transaccional (copiar precios y reservar stock en la misma operación, según recoge este plan) y los endpoints correspondientes.
+Se añade además un esquema de relaciones de entidad (ver sección "Esquema de relaciones") con las entidades de Catálogo y Pedidos implementadas hasta ahora.
+
+Se completa el resto del paso 2 (Pedidos) con la creación transaccional y los endpoints:
+
+- `OrderService.createOrder(...)` (con `@Transactional`) valida cliente, dirección y líneas, busca cada producto activo, comprueba stock suficiente y lo reserva con `product.changeStock(...)` dentro de la misma transacción, y añade cada línea al pedido con `Order.addItem(...)`. Reutiliza `InvalidRequestException`/`ResourceNotFoundException` ya existentes en vez de crear nuevos tipos de error.
+- `OrderService.findByIdForCustomer(id, email)` consulta un pedido por id **y** email del cliente, ya que sin autenticación no hay otra forma de acotar el acceso a "sus" pedidos.
+- Endpoints nuevos: `POST /api/v1/orders` (201, crea el pedido) y `GET /api/v1/orders/{id}?email=...` (200, consulta acotada por email; 404 si no coincide).
+- DTOs en `com.candycorn.shop.order.dto`: `CreateOrderRequest`/`OrderItemRequest`/`AddressRequest` (entrada) y `OrderResponse`/`OrderItemResponse`/`AddressResponse` (salida), siguiendo el mismo patrón `from(entidad)` que ya usan los DTOs de Catálogo.
+- Tests de servicio y de controlador para los casos de validación (cliente/dirección incompletos, sin líneas, cantidad no positiva, producto inexistente, stock insuficiente) y para el camino feliz (reserva de stock y cálculo del total).
+
+Pendiente para continuar Pedidos: nada bloqueante para el paso 2 en sí; queda para más adelante lo que corresponde a otros pasos del plan (gestión admin de pedidos en el paso 3, y OpenAPI/tests de integración en el paso 5).
