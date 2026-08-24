@@ -82,6 +82,63 @@ Estados previstos:
 PENDING, CONFIRMED, PREPARING, SHIPPED, DELIVERED, CANCELLED
 ```
 
+## Esquema de relaciones
+
+Refleja las entidades implementadas hasta ahora (Catálogo y el modelo de Pedidos). `Address` no es una tabla propia: es un `@Embeddable` que se guarda como columnas `shipping_*` dentro de `orders`. `User` aparece en la estructura de paquetes del plan pero todavía no tiene entidad ni tabla.
+
+```mermaid
+erDiagram
+    CATEGORY ||--o{ PRODUCT : "clasifica"
+    PRODUCT ||--o{ ORDER_ITEM : "se referencia en"
+    ORDER ||--|{ ORDER_ITEM : "contiene"
+    ORDER ||--|| ADDRESS : "embebe (shipping_*)"
+
+    CATEGORY {
+        UUID id PK
+        string name
+        string slug UK
+        boolean active
+    }
+    PRODUCT {
+        UUID id PK
+        string name
+        string slug UK
+        string description
+        decimal price
+        string imageUrl
+        int stock
+        boolean active
+        UUID category_id FK
+    }
+    ORDER {
+        UUID id PK
+        string customerName
+        string customerEmail
+        string status
+    }
+    ORDER_ITEM {
+        UUID id PK
+        UUID order_id FK
+        UUID product_id FK
+        string productName
+        decimal unitPrice
+        int quantity
+    }
+    ADDRESS {
+        string recipientName
+        string street
+        string city
+        string postalCode
+        string country
+        string phone
+    }
+```
+
+Notas:
+
+- `Product` no se borra físicamente al desactivarse, así que `ORDER_ITEM.product_id` sigue siendo válido aunque el producto ya no esté activo; por eso `OrderItem` guarda `productName`/`unitPrice` como copia (snapshot) en el momento del pedido, en vez de depender de los valores actuales del producto.
+- `Order` es la raíz del agregado: `OrderItem` solo se crea y se modifica a través de `Order.addItem(...)`, no tiene repositorio propio.
+
 ## Calidad
 
 Cada funcionalidad tendrá tests unitarios, de repositorio y de API. Los errores se devolverán mediante un formato común usando `@RestControllerAdvice`. La API se versionará bajo `/api/v1` y se documentará con OpenAPI.
@@ -95,3 +152,26 @@ Cada funcionalidad tendrá tests unitarios, de repositorio y de API. Los errores
 - `ProductSpecifications.nameContains` usa `Locale.ROOT` al pasar a minúsculas para evitar comportamientos distintos según el locale del servidor.
 - `GlobalExceptionHandler` añade dos manejadores: `MethodArgumentTypeMismatchException` (parámetros con tipo inválido, p. ej. un UUID o precio mal formado) devuelve 400, y un manejador genérico de `Exception` devuelve 500 y registra el error en vez de dejarlo sin capturar.
 - Se añaden tests unitarios y de controlador cubriendo estos casos: stock negativo, paginación inválida al listar por categoría, y parámetros de tipo inválido en los endpoints de productos.
+
+### 2026-08-22
+
+Arranca el paso 2 del plan (Pedidos), con modelos y repositorio (todavía sin endpoints ni lógica de creación transaccional):
+
+- Nuevas entidades en `com.candycorn.shop.order.entity`: `Order` (raíz del agregado), `OrderItem`, `Address` (embeddable) y el enum `OrderStatus`.
+- `Order.addItem(product, quantity)` copia nombre y precio del producto como snapshot en cada `OrderItem`, tal y como recoge este plan; rechaza cantidades no positivas.
+- `Order.changeStatus(...)` valida las transiciones de estado permitidas (`PENDING → CONFIRMED/CANCELLED`, etc.) y rechaza saltos inválidos o transiciones desde estados terminales (`DELIVERED`, `CANCELLED`).
+- `OrderRepository` (`com.candycorn.shop.order.repository`) como único repositorio del agregado; no hay repositorio propio para `OrderItem` porque se accede siempre a través de `Order`.
+- Migración `V3__create_order_tables.sql` con las tablas `orders` y `order_items`, incluyendo el check de estado válido y las claves foráneas hacia `products`.
+- Tests unitarios de la entidad `Order` cubriendo snapshot de precios, cálculo del total, y transiciones de estado válidas/inválidas.
+
+Se añade además un esquema de relaciones de entidad (ver sección "Esquema de relaciones") con las entidades de Catálogo y Pedidos implementadas hasta ahora.
+
+Se completa el resto del paso 2 (Pedidos) con la creación transaccional y los endpoints:
+
+- `OrderService.createOrder(...)` (con `@Transactional`) valida cliente, dirección y líneas, busca cada producto activo, comprueba stock suficiente y lo reserva con `product.changeStock(...)` dentro de la misma transacción, y añade cada línea al pedido con `Order.addItem(...)`. Reutiliza `InvalidRequestException`/`ResourceNotFoundException` ya existentes en vez de crear nuevos tipos de error.
+- `OrderService.findByIdForCustomer(id, email)` consulta un pedido por id **y** email del cliente, ya que sin autenticación no hay otra forma de acotar el acceso a "sus" pedidos.
+- Endpoints nuevos: `POST /api/v1/orders` (201, crea el pedido) y `GET /api/v1/orders/{id}?email=...` (200, consulta acotada por email; 404 si no coincide).
+- DTOs en `com.candycorn.shop.order.dto`: `CreateOrderRequest`/`OrderItemRequest`/`AddressRequest` (entrada) y `OrderResponse`/`OrderItemResponse`/`AddressResponse` (salida), siguiendo el mismo patrón `from(entidad)` que ya usan los DTOs de Catálogo.
+- Tests de servicio y de controlador para los casos de validación (cliente/dirección incompletos, sin líneas, cantidad no positiva, producto inexistente, stock insuficiente) y para el camino feliz (reserva de stock y cálculo del total).
+
+Pendiente para continuar Pedidos: nada bloqueante para el paso 2 en sí; queda para más adelante lo que corresponde a otros pasos del plan (gestión admin de pedidos en el paso 3, y OpenAPI/tests de integración en el paso 5).
